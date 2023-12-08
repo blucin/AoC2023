@@ -26,8 +26,6 @@ func main() {
 			solution2Keys = append(solution2Keys, lines[i][0:3])
 		}
 	}
-	fmt.Println(solution1Keys)
-	fmt.Println(solution2Keys)
 
 	solution1 := MaxTraversalCnt(`ZZZ`, mappings, solution1Keys, traversal)
 	solution2 := MaxTraversalCnt(`..Z`, mappings, solution2Keys, traversal)
@@ -48,7 +46,6 @@ func MaxTraversalCnt(pattern string, mappings map[string][2]string, keys []strin
 			t := traversal[i%len(traversal)]
 			match, _ := regexp.MatchString(pattern, start)
 			if match {
-				fmt.Println("Found pattern", pattern, "at", start)
 				break
 			}
 			if t == 'R' {
@@ -61,7 +58,6 @@ func MaxTraversalCnt(pattern string, mappings map[string][2]string, keys []strin
 			}
 		}
 		counts = append(counts, localCnt)
-		fmt.Println(key, localCnt)
 	}
 	if len(counts) == 0 {
 		return -1
