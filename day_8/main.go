@@ -27,17 +27,16 @@ func main() {
 		}
 	}
 
-	solution1 := MaxTraversalCnt(`ZZZ`, mappings, solution1Keys, traversal)
-	solution2 := MaxTraversalCnt(`..Z`, mappings, solution2Keys, traversal)
+	solution1 := TraversalCnt(`ZZZ`, mappings, solution1Keys, traversal)
+	solution2 := TraversalCnt(`..Z`, mappings, solution2Keys, traversal)
 
 	fmt.Println("Solution 1:", solution1)
 	fmt.Println("Solution 2:", solution2)
 }
 
-// we have a map of all the points and their connections either left or right
-// returns max cnt of traversals it took to find a pattern in a map
+// returns lcs of (cnt of traversals it took to find a pattern from a given starting key) in a map
 // given indexs of initial arrays of key and a traversal string
-func MaxTraversalCnt(pattern string, mappings map[string][2]string, keys []string, traversal string) int {
+func TraversalCnt(pattern string, mappings map[string][2]string, keys []string, traversal string) int {
 	counts := make([]int, 0)
 	for _, key := range keys {
 		start := key
