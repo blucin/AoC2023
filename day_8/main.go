@@ -34,8 +34,11 @@ func main() {
 	fmt.Println("Solution 2:", solution2)
 }
 
-// returns lcs of (cnt of traversals it took to find a pattern from a given starting key) in a map
-// given indexs of initial arrays of key and a traversal string
+// Traverses the mappings according to the traversal string, starting from each key in the keys slice.
+// For each key, it counts the number of steps until it reaches a mapping that matches the pattern.
+// It returns the least common multiple (LCM) of these counts.
+// If no mapping matches the pattern, it returns -1.
+// If there is only one key, it returns the count for that key.
 func TraversalCnt(pattern string, mappings map[string][2]string, keys []string, traversal string) int {
 	counts := make([]int, 0)
 	for _, key := range keys {
