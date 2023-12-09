@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	lines := ReadFile("input.txt")
+	lines := ReadFile("input_test.txt")
 	traversal := lines[0]
 	lines = append(lines[:0], lines[2:]...)
 
