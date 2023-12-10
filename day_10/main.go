@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// i and j is the starting point S
-	lines, i, j := ParseLines(ReadFile("input.txt"))
+	lines, i, j := ParseLines(ReadFile("input_test.txt"))
 	t := Traverse(lines, i, j)
 	solution1 := len(t) / 2
 	fmt.Println("Solution 1:", solution1)
