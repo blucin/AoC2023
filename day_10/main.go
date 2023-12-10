@@ -77,21 +77,6 @@ func Traverse(lines []string, i int, j int) []rune {
 	}
 }
 
-func ChangeDirection(i int, j int, c rune) (int, int) {
-	fmt.Println("ChangeDirection", i, j, c)
-	switch c {
-	case 'J':
-		return i, j - 1
-	case 'F':
-		return i, j + 1
-	case '7':
-		return i + 1, j
-	case 'L':
-		return i - 1, j
-	}
-	return i, j
-}
-
 func ParseLines(lines []string) ([]string, int, int) {
 	i, j := 0, 0
 	for x, line := range lines {
