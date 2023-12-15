@@ -59,7 +59,7 @@ SkipLetter:
 }
 
 func remove[T any](s []T, i int) []T {
-	// order it not important
+	// order is not important
 	// s[i] = s[len(s)-1]
 	// return s[:len(s)-1]
 
