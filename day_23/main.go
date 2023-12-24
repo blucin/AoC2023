@@ -49,24 +49,6 @@ func FindLongestPath(matrix [][]rune) int {
 	return maxDist
 }
 
-func PrintSeen(matrix [][]rune, seen map[[2]int]bool) {
-	for i, row := range matrix {
-		for j, _ := range row {
-			if matrix[i][j] == '#' {
-				fmt.Print(".")
-			} else if matrix[i][j] == '.' {
-				fmt.Print("*")
-			} else if seen[[2]int{i, j}] {
-				fmt.Print(".")
-			} else {
-				fmt.Print("^")
-			}
-		}
-		fmt.Println()
-	}
-	fmt.Println()
-}
-
 func isValidMove(r int, c int, matrix [][]rune) bool {
 	if r > 0 && r < len(matrix) && c > 0 && c < len(matrix[0]) && matrix[r][c] != '#' {
 		return true
