@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	lines := ReadFile("input.txt")
+	lines := ReadFile("input_test.txt")
 	solution1 := FindLongestPath(lines)
 	fmt.Println("Solution 1:", solution1)
 }
