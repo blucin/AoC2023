@@ -14,9 +14,8 @@ func main() {
 }
 
 type Node struct {
-	r, c   int // row and column number
-	n      int // distance from the source
-	dr, dc int // direction of the previous step
+	r, c int // row and column number
+	n    int // distance from the source
 }
 
 type Stack []*Node
@@ -33,7 +32,7 @@ func DFS(node *Node, matrix [][]rune, seen map[[2]int]bool, currentDist int, max
 	seen[[2]int{node.r, node.c}] = true
 	for _, neighbour := range GetNeighbours(node.r, node.c, matrix) {
 		if !seen[[2]int{neighbour[0], neighbour[1]}] {
-			DFS(&Node{neighbour[0], neighbour[1], node.n + 1, node.r, node.c}, matrix, seen, currentDist+1, maxDist)
+			DFS(&Node{neighbour[0], neighbour[1], node.n + 1}, matrix, seen, currentDist+1, maxDist)
 		}
 	}
 	if currentDist > *maxDist {
@@ -45,7 +44,7 @@ func DFS(node *Node, matrix [][]rune, seen map[[2]int]bool, currentDist int, max
 func FindLongestPath(matrix [][]rune) int {
 	seen := make(map[[2]int]bool)
 	maxDist := -1
-	DFS(&Node{0, 1, 0, 0, 0}, matrix, seen, 0, &maxDist) // start node
+	DFS(&Node{0, 1, 0}, matrix, seen, 0, &maxDist) // start node
 	return maxDist
 }
 
