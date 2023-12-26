@@ -11,15 +11,20 @@ import (
 
 func main() {
 	lines := ReadFile("input_test.txt")
+
+	// puzzle1
 	workflows, ratings := ParseFile(lines)
 	solution1 := FindAcceptedRatingsSum(workflows, ratings)
 	fmt.Println("Solution 1:", solution1)
+
+	// puzzle2: partMap consists of all possible workflow from 1 to 4k
 }
 
 func FindAcceptedRatingsSum(workflows map[string]string, ratings [][]int) int {
 	accepted := 0
+	partMap := make(map[rune]int, 0)
 	for _, rating := range ratings {
-		partMap := map[rune]int{
+		partMap = map[rune]int{
 			'x': rating[0],
 			'm': rating[1],
 			'a': rating[2],
@@ -37,37 +42,47 @@ func FindAcceptedRatingsSum(workflows map[string]string, ratings [][]int) int {
 
 func IsValidRating(workflows map[string]string, startExprs []string, partMap map[rune]int) bool {
 	for _, expr := range startExprs {
-		switch {
-		case len(expr) > 1:
-			switch {
-			case expr[1] == '>':
-				if partMap[rune(expr[0])] > Str2Num(expr[2:]) {
-					switch len(strings.Split(expr, ":")[1]) {
-					case 1:
-						return strings.Split(expr, ":")[1] == "A"
-					default:
-						IsValidRating(workflows, strings.Split(workflows[strings.Split(expr, ":")[1]], ","), partMap)
-					}
-				}
-				return false
-			case expr[1] == '<':
-				if partMap[rune(expr[0])] < Str2Num(expr[2:]) {
-					switch len(strings.Split(expr, ":")[1]) {
-					case 1:
-						return strings.Split(expr, ":")[1] == "A"
-					default:
-						IsValidRating(workflows, strings.Split(workflows[strings.Split(expr, ":")[1]], ","), partMap)
-					}
-				}
-				return false
-			default:
-				IsValidRating(workflows, strings.Split(workflows[strings.Split(expr, ":")[1]], ","), partMap)
-			}
-		case len(expr) == 1:
+		// exit condition
+		if len(expr) == 1 {
 			return expr == "A"
 		}
+
+		// check if the expression is only a key
+		if expr[1] != '>' && expr[1] != '<' {
+			nextKey := expr
+			nextExprs := strings.Split(workflows[nextKey], ",")
+			return IsValidRating(workflows, nextExprs, partMap)
+		}
+
+		partValue, numValue := partMap[rune(expr[0])], Str2Num(strings.Split(expr, ":")[0][2:])
+		isValidExpr := IsValidExpression(rune(expr[1]), partValue, numValue)
+
+		if !isValidExpr {
+			continue
+		}
+
+		split := strings.Split(expr, ":")
+
+		if len(split[1]) == 1 {
+			return split[1] == "A"
+		}
+
+		nextKey := split[1]
+		nextExprs := strings.Split(workflows[nextKey], ",")
+		return IsValidRating(workflows, nextExprs, partMap)
 	}
 	return false
+}
+
+func IsValidExpression(operator rune, partValue, numValue int) bool {
+	switch operator {
+	case '>':
+		return partValue > numValue
+	case '<':
+		return partValue < numValue
+	default:
+		return false
+	}
 }
 
 func ParseFile(lines []string) (map[string]string, [][]int) {
