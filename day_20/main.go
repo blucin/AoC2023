@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -15,20 +16,27 @@ const (
 )
 
 func main() {
-	broadcasts, modules, operations := ParseFile(ReadFile("input_test_test.txt"))
-	solution1 := GetProduct(broadcasts, modules, operations)
+	modules, operations := ParseFile(ReadFile("input_test.txt"))
+	solution1 := GetProduct(modules, operations)
 	fmt.Println("Solution1: ", solution1)
-
 }
 
-func GetProduct(broadcasts []string, mod map[string]Modules, operations map[string][]string) int {
+func GetProduct(mod map[string]Modules, operations map[string][]string) int {
 	convMemories := make(map[string][]bool, 0)
 	lowCnt, highCnt := 0, 0
+	logs := make([]string, 0)
 
 	initialState := make([]bool, 0)
 	for _, v := range mod {
 		initialState = append(initialState, v.state)
 	}
+
+	// TODO: fix iteration over map being undeterministic
+	keys := make([]string, 0)
+	for k := range operations {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 
 	iter := 0
 	for {
@@ -37,11 +45,31 @@ func GetProduct(broadcasts []string, mod map[string]Modules, operations map[stri
 		for _, v := range mod {
 			currentState = append(currentState, v.state)
 		}
-		if CompareSlices(initialState, currentState) && iter > 0 {
-			break
+		if iter > 0 {
+			shouldBreak := false
+			// flipflops
+			for _, state := range currentState {
+				if state {
+					shouldBreak = true
+					break
+				}
+			}
+			// conjunction modules
+			for _, convState := range convMemories {
+				for _, state := range convState {
+					if state {
+						shouldBreak = true
+						break
+					}
+				}
+			}
+			if shouldBreak {
+				break
+			}
 		}
 
-		for lhs, rhs := range operations {
+		for _, lhs := range keys {
+			rhs := operations[lhs]
 			switch {
 			case lhs[0] == '%': // flipflop
 				for _, val := range rhs {
@@ -49,21 +77,44 @@ func GetProduct(broadcasts []string, mod map[string]Modules, operations map[stri
 						toSend := mod[lhs[1:]].state
 						lowCnt, highCnt = GetCount(toSend, lowCnt, highCnt)
 						convMemories[val] = append(convMemories[val], toSend)
+						logs = append(logs, Logger(lhs[1:], toSend, rhs)...)
 						continue
 					}
 					sent := SwitchFlipFlop(mod[lhs[1:]].state, mod, val)
+					mod[val] = Modules{
+						prefix: mod[val].prefix,
+						state:  sent,
+					}
+					logs = append(logs, Logger(lhs[1:], sent, rhs)...)
 					lowCnt, highCnt = GetCount(sent, lowCnt, highCnt)
 				}
 
 			case lhs[0] == '&': // conjuction
-				convState := GetConjunctionState(convMemories[lhs[1:]])
+				toSend := off
+				for _, val := range convMemories[lhs[1:]] {
+					if !val {
+						toSend = on
+						break
+					}
+				}
 				for _, val := range rhs {
-					SwitchFlipFlop(convState, mod, val)
-					lowCnt, highCnt = GetCount(convState, lowCnt, highCnt)
+					SwitchFlipFlop(toSend, mod, val)
+					mod[val] = Modules{
+						prefix: mod[val].prefix,
+						state:  toSend,
+					}
+					logs = append(logs, Logger(lhs[1:], toSend, rhs)...)
+					lowCnt, highCnt = GetCount(toSend, lowCnt, highCnt)
 				}
 
-			case lhs[0] == 'b': // broadcast
-				lowCnt += BroadcastOffSignal(mod, broadcasts)
+			case lhs == "broadcaster":
+				for _, val := range rhs {
+					mod[val] = Modules{
+						prefix: mod[val].prefix,
+						state:  off,
+					}
+					lowCnt++
+				}
 
 			default:
 				log.Fatal("Invalid operation found")
@@ -72,7 +123,24 @@ func GetProduct(broadcasts []string, mod map[string]Modules, operations map[stri
 		iter++
 	}
 	fmt.Println("Low: ", lowCnt, "High: ", highCnt)
+	for _, log := range logs {
+		fmt.Println(log)
+	}
 	return lowCnt * highCnt
+}
+
+// logger for debugging
+func Logger(lhs string, signal bool, rhs []string) []string {
+	logs := make([]string, 0)
+	for _, sents := range rhs {
+		// example: a -high-> b
+		signalStr := "low"
+		if signal {
+			signalStr = "high"
+		}
+		logs = append(logs, fmt.Sprintf("%s -%s-> %s", lhs, signalStr, sents))
+	}
+	return logs
 }
 
 type Modules struct {
@@ -86,31 +154,6 @@ func GetCount(state bool, lowCnt int, highCnt int) (int, int) {
 		return lowCnt, highCnt + 1
 	}
 	return lowCnt + 1, highCnt
-}
-
-// if one of the signal is low, then send high
-// if all signals in the memory are high, then send low
-func GetConjunctionState(memory []bool) bool {
-	for _, val := range memory {
-		if !val {
-			return on
-		}
-	}
-	return off
-}
-
-// broadcasts low signal and returns
-// number of low signals broadcasted
-func BroadcastOffSignal(mod map[string]Modules, names []string) int {
-	lowCnt := 0
-	for _, name := range names {
-		mod[name] = Modules{
-			prefix: mod[name].prefix,
-			state:  off,
-		}
-		lowCnt++
-	}
-	return lowCnt
 }
 
 func CompareSlices(s1 []bool, s2 []bool) bool {
@@ -146,25 +189,17 @@ func SwitchFlipFlop(signal bool, mod map[string]Modules, name string) bool {
 	}
 }
 
-func ParseFile(lines []string) ([]string, map[string]Modules, map[string][]string) {
-	broadcasts := make([]string, 0)
+func ParseFile(lines []string) (map[string]Modules, map[string][]string) {
 	operations := make(map[string][]string, 0)
 	modules := make(map[string]Modules, 0)
-	for i, line := range lines {
-		s1 := strings.Fields(line)
-		if strings.HasPrefix(line, "broadcaster") { // broadcaster
-			for j := 2; j < len(s1); j++ {
-				withoutComma := strings.TrimSuffix(s1[j], ",")
-				broadcasts = append(broadcasts, withoutComma)
-			}
-		}
-		if i > 0 { // operations and modules
-			split := strings.Split(line, "->")
-			sender := strings.Fields(split[0])[0][0:]
-			receiver := strings.FieldsFunc(split[1], func(r rune) bool {
-				return r == ',' || r == ' '
-			})
-			operations[sender] = receiver
+	for _, line := range lines {
+		split := strings.Split(line, "->")
+		sender := strings.Fields(split[0])[0][0:]
+		receiver := strings.FieldsFunc(split[1], func(r rune) bool {
+			return r == ',' || r == ' '
+		})
+		operations[sender] = receiver
+		if sender != "broadcaster" {
 			pre := rune(strings.Fields(split[0])[0][0])
 			name := strings.Fields(split[0])[0][1:]
 			modules[name] = Modules{
@@ -173,7 +208,7 @@ func ParseFile(lines []string) ([]string, map[string]Modules, map[string][]strin
 			}
 		}
 	}
-	return broadcasts, modules, operations
+	return modules, operations
 }
 
 func Str2Num(s string) int {
